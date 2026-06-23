@@ -143,14 +143,24 @@ ipcMain.handle(
   'ffmpeg:convert',
   (
     event,
-    payload: { id: string; inputPath: string; outputFolder: string; outputFileName: string }
+    payload: { id: string; inputPath: string; outputFolder: string; outputFileName: string; codec: string }
   ): Promise<void> => {
-    const { id, inputPath, outputFolder, outputFileName } = payload
+    const { id, inputPath, outputFolder, outputFileName, codec } = payload
     mkdirSync(outputFolder, { recursive: true })
     const outputPath = resolveOutputPath(join(outputFolder, outputFileName))
 
+    let cmd = ffmpeg(inputPath)
+
+    if (codec === 'Uncompressed') {
+      cmd = cmd.videoCodec('rawvideo').audioCodec('pcm_s16le')
+    } else if (codec === 'HAP') {
+      cmd = cmd.videoCodec('hap').outputOptions('-pix_fmt', 'rgba')
+    } else if (codec === 'HAP Q') {
+      cmd = cmd.videoCodec('hap').outputOptions('-format', 'hap_q', '-pix_fmt', 'rgba')
+    }
+
     return new Promise((resolve, reject) => {
-      ffmpeg(inputPath)
+      cmd
         .output(outputPath)
         .on('progress', (progress) => {
           const percent = Math.min(Math.round(progress.percent ?? 0), 99)

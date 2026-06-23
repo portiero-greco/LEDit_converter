@@ -93,8 +93,9 @@ def _find_ffmpeg() -> Optional[str]:
 
 # ── Data model ────────────────────────────────────────────────────────────────
 
-# Codecs available per output format (None = default/auto)
+# Codecs available per output format
 MOV_CODECS = ["Standard", "HAP", "HAP Q"]
+AVI_CODECS = ["Standard", "Uncompressed"]
 
 class FileItem:
     def __init__(self, path: str):
@@ -221,21 +222,28 @@ class App:
         fmt_var = ctk.StringVar(value=item.output_fmt)
         codec_var = ctk.StringVar(value=item.codec)
 
+        def _codec_values_for(fmt: str) -> list[str]:
+            if fmt == "mov": return MOV_CODECS
+            if fmt == "avi": return AVI_CODECS
+            return ["Standard"]
+
         codec_menu = ctk.CTkOptionMenu(
-            bot, values=MOV_CODECS, variable=codec_var,
-            width=88, height=26, font=ctk.CTkFont(size=11),
+            bot, values=_codec_values_for(item.output_fmt), variable=codec_var,
+            width=108, height=26, font=ctk.CTkFont(size=11),
             fg_color=SURFACE, button_color=BORDER, button_hover_color=ACCENT,
             dropdown_fg_color=SURFACE,
             command=lambda c, i=item.id: self._codec_change(i, c),
         )
 
         def _on_fmt_change(f, i=item.id, cm=codec_menu, cv=codec_var):
-            if f == "mov":
+            cv.set("Standard")
+            self._codec_change(i, "Standard")
+            vals = _codec_values_for(f)
+            if len(vals) > 1:
+                cm.configure(values=vals)
                 cm.pack(side="left", padx=(6, 0))
             else:
                 cm.pack_forget()
-                cv.set("Standard")
-                self._codec_change(i, "Standard")
             self._format_change(i, f)
 
         ctk.CTkOptionMenu(
@@ -246,8 +254,8 @@ class App:
             command=_on_fmt_change,
         ).pack(side="left")
 
-        # Codec menu only visible when mov is selected
-        if item.output_fmt == "mov":
+        # Codec menu only visible when mov or avi is selected
+        if item.output_fmt in ("mov", "avi"):
             codec_menu.pack(side="left", padx=(6, 0))
 
         pbar = ctk.CTkProgressBar(bot, height=4,
@@ -418,10 +426,13 @@ class App:
             return
         d = self.rows[fid]
         d["pbar"].set(f.progress / 100)
+        done_label = f"Done ✓  {f.input_fmt.upper()}→{f.output_fmt.upper()}"
+        if f.codec != "Standard":
+            done_label += f" ({f.codec})"
         labels = {
             "waiting":    ("Waiting",        MUTED),
             "converting": (f"{f.progress}%", ACCENT),
-            "done":       ("Done ✓",         GREEN),
+            "done":       (done_label,        GREEN),
             "error":      ("Error ✗",        RED),
         }
         text, color = labels.get(f.status, ("", MUTED))
@@ -462,6 +473,8 @@ class App:
             codec_flags = ["-vcodec", "hap", "-pix_fmt", "rgba"]
         elif item.output_fmt == "mov" and item.codec == "HAP Q":
             codec_flags = ["-vcodec", "hap", "-format", "hap_q", "-pix_fmt", "rgba"]
+        elif item.output_fmt == "avi" and item.codec == "Uncompressed":
+            codec_flags = ["-vcodec", "rawvideo", "-acodec", "pcm_s16le"]
 
         cmd = [self.ffmpeg, "-i", item.path] + codec_flags + ["-y", out_path]
         proc = subprocess.Popen(

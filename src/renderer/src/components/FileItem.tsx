@@ -1,11 +1,12 @@
 import React from 'react'
 import { X, CheckCircle, AlertCircle, Film, ArrowRight, Loader } from 'lucide-react'
-import { VideoFile, SUPPORTED_FORMATS } from '../types'
+import { VideoFile, SUPPORTED_FORMATS, AVI_CODECS, MOV_CODECS } from '../types'
 
 interface FileItemProps {
   file: VideoFile
   onRemove: (id: string) => void
   onFormatChange: (id: string, format: string) => void
+  onCodecChange: (id: string, codec: string) => void
   isConverting: boolean
 }
 
@@ -13,9 +14,15 @@ export default function FileItem({
   file,
   onRemove,
   onFormatChange,
+  onCodecChange,
   isConverting
 }: FileItemProps): React.ReactElement {
   const isDisabled = file.status === 'converting' || file.status === 'done' || isConverting
+
+  const codecOptions =
+    file.outputFormat === 'avi' ? AVI_CODECS :
+    file.outputFormat === 'mov' ? MOV_CODECS :
+    null
 
   return (
     <div
@@ -63,6 +70,21 @@ export default function FileItem({
               </option>
             ))}
           </select>
+
+          {/* Codec dropdown — shown for AVI and MOV */}
+          {codecOptions && (
+            <select
+              value={file.codec}
+              onChange={(e) => onCodecChange(file.id, e.target.value)}
+              disabled={isDisabled}
+              className={`text-xs px-2 py-0.5 rounded border bg-surface text-primary outline-none focus:border-accent transition-colors
+                ${isDisabled ? 'opacity-50 cursor-not-allowed border-border' : 'border-border hover:border-accent cursor-pointer'}`}
+            >
+              {codecOptions.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* Status indicator */}
@@ -108,6 +130,7 @@ export default function FileItem({
           Conversion complete &middot;{' '}
           <span className="text-secondary font-normal">
             {file.inputFormat.toUpperCase()} → {file.outputFormat.toUpperCase()}
+            {file.codec !== 'Standard' && ` (${file.codec})`}
           </span>
         </p>
       )}

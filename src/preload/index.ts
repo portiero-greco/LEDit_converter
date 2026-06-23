@@ -24,7 +24,7 @@ export interface ElectronAPI {
   openPath: (folderPath: string) => Promise<void>
   getDefaultOutputFolder: () => Promise<string>
   getPlatform: () => Promise<string>
-  convert: (payload: { id: string; inputPath: string; outputFolder: string; outputFileName: string }) => Promise<void>
+  convert: (payload: { id: string; inputPath: string; outputFolder: string; outputFileName: string; codec: string }) => Promise<void>
   onProgress: (callback: (payload: ProgressPayload) => void) => () => void
   onDone: (callback: (payload: DonePayload) => void) => () => void
   onError: (callback: (payload: ErrorPayload) => void) => () => void

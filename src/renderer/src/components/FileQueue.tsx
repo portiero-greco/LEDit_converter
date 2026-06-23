@@ -8,6 +8,7 @@ interface FileQueueProps {
   isConverting: boolean
   onRemove: (id: string) => void
   onFormatChange: (id: string, format: string) => void
+  onCodecChange: (id: string, codec: string) => void
   onClearAll: () => void
 }
 
@@ -16,6 +17,7 @@ export default function FileQueue({
   isConverting,
   onRemove,
   onFormatChange,
+  onCodecChange,
   onClearAll
 }: FileQueueProps): React.ReactElement {
   if (files.length === 0) return <></>
@@ -46,6 +48,7 @@ export default function FileQueue({
             file={file}
             onRemove={onRemove}
             onFormatChange={onFormatChange}
+            onCodecChange={onCodecChange}
             isConverting={isConverting}
           />
         ))}

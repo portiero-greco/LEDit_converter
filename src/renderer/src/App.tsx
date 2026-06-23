@@ -84,6 +84,7 @@ export default function App(): React.ReactElement {
           path: p,
           inputFormat: ext || 'unknown',
           outputFormat: 'mp4',
+          codec: 'Standard',
           status: 'waiting',
           progress: 0
         }
@@ -102,7 +103,13 @@ export default function App(): React.ReactElement {
 
   const handleFormatChange = useCallback((id: string, format: string) => {
     setFiles((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, outputFormat: format } : f))
+      prev.map((f) => (f.id === id ? { ...f, outputFormat: format, codec: 'Standard' } : f))
+    )
+  }, [])
+
+  const handleCodecChange = useCallback((id: string, codec: string) => {
+    setFiles((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, codec } : f))
     )
   }, [])
 
@@ -143,7 +150,8 @@ export default function App(): React.ReactElement {
           id: file.id,
           inputPath: file.path,
           outputFolder,
-          outputFileName
+          outputFileName,
+          codec: file.codec
         })
       } catch {
         // Error is already handled via the IPC listener
@@ -173,6 +181,7 @@ export default function App(): React.ReactElement {
             isConverting={isConverting}
             onRemove={handleRemove}
             onFormatChange={handleFormatChange}
+            onCodecChange={handleCodecChange}
             onClearAll={handleClearAll}
           />
         )}
